@@ -1,7 +1,13 @@
 name: action-smoke
-# Manual: runs this commit's Action on a real runner against example.com, tagged source "ci" so the run is not counted as use.
+# Runs this commit's Action on a real runner against example.com when the Action changes. Tagged source "ci", so it is not counted as use.
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - action.yml
+      - src/**
+      - .github/workflows/action-smoke.yml
 jobs:
   smoke:
     runs-on: ubuntu-latest
