@@ -1,0 +1,40 @@
+name: CitedBy AI-search readiness check
+description: Fail a build when AI-search crawlers cannot read your live site. Free check by citedby.eu, no account or key.
+author: CitedBy
+branding:
+  icon: search
+  color: blue
+inputs:
+  url:
+    description: Address of the public site to check, for example https://example.com
+    required: true
+  fail-on:
+    description: 'Fail the step when a check reaches this level: fail (default), warn or never.'
+    required: false
+    default: fail
+  lang:
+    description: 'Language your site is asked for: en, fr, de, es or nl.'
+    required: false
+    default: en
+  fail-on-error:
+    description: 'Also fail the step when the check could not run (rate limit, your site refused or did not answer). Default false: that case is a warning.'
+    required: false
+    default: 'false'
+  source:
+    description: 'Tag sent with the check so citedby.eu can count Action runs. Any other value, such as none, opts out of the count.'
+    required: false
+    default: action
+outputs:
+  result:
+    description: 'pass, check (a warning-level finding), fix (a failing check) or not-measured.'
+  passed:
+    description: Number of checks that passed.
+  total:
+    description: Number of scored checks (pass, fail and warn).
+  fix-count:
+    description: Number of checks that need a fix.
+  check-count:
+    description: Number of checks to look at.
+runs:
+  using: node24
+  main: src/action.js

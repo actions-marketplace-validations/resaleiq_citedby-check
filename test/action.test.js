@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { runAction } from '../src/action.js';
 import { fakeApi, RESULT_MIXED, RESULT_CLEAN } from './_fake-api.js';
 
@@ -90,4 +92,18 @@ test('outside GitHub (no GITHUB_OUTPUT or summary file) it still runs and prints
   const r = await act({ url: 'https://good.example' }, { status: 200, body: RESULT_CLEAN }, { files: false });
   assert.equal(r.code, 0);
   assert.match(r.stdout, /3 of 3 checks passed\./);
+});
+
+test('GitHub starts it as `node src/action.js`: the inputs come from INPUT_* and the exit code is the step result', async () => {
+  const api = await fakeApi({ status: 200, body: RESULT_MIXED });
+  const entry = new URL('../src/action.js', import.meta.url).pathname;
+  try {
+    const r = await promisify(execFile)(process.execPath, [entry], { env: { PATH: process.env.PATH, CITEDBY_API_URL: api.url, 'INPUT_URL': 'https://shop.example', 'INPUT_FAIL-ON': 'fail' } }).then(
+      (ok) => ({ code: 0, stdout: ok.stdout }),
+      (e) => ({ code: e.code, stdout: e.stdout }),
+    );
+    assert.equal(r.code, 1);
+    assert.match(r.stdout, /^::error title=CitedBy%3A AI crawlers allowed in robots\.txt::/m);
+    assert.equal(api.requests[0].json.source, 'action');
+  } finally { await api.close(); }
 });

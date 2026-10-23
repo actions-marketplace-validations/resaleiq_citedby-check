@@ -1,6 +1,7 @@
 // The GitHub Action: reads the inputs GitHub passes as INPUT_* variables, runs the same check as the CLI,
 // and reports through the log, annotations, the job summary and step outputs. No dependencies.
 import { appendFileSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 import { runCheck, exitCode, summarize, LANGS } from './check.js';
 import { renderText, renderMarkdown, annotations, escData } from './render.js';
 
@@ -39,6 +40,6 @@ export async function runAction({ env = process.env, stdout = process.stdout, fe
 }
 
 // Run directly by GitHub (runs.main), not when imported by the tests.
-if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   process.exitCode = await runAction();
 }
