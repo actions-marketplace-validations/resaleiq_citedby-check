@@ -1,0 +1,45 @@
+{
+  "name": "citedby-check",
+  "version": "0.1.0",
+  "description": "Check whether AI-search crawlers can read your site, from the terminal or a GitHub Action. Free, no account, no API key.",
+  "keywords": [
+    "ai-search",
+    "aeo",
+    "geo",
+    "seo",
+    "robots-txt",
+    "llms-txt",
+    "gptbot",
+    "crawler",
+    "github-action",
+    "cli"
+  ],
+  "homepage": "https://citedby.eu/free-ai-visibility-check",
+  "bugs": {
+    "url": "https://github.com/resaleiq/citedby-check/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/resaleiq/citedby-check.git"
+  },
+  "license": "MIT",
+  "author": "CitedBy <hello@citedby.eu> (https://citedby.eu)",
+  "type": "module",
+  "bin": {
+    "citedby-check": "bin/citedby-check.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "action.yml",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test test/"
+  }
+}
