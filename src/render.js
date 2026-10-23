@@ -107,16 +107,18 @@ export function renderMarkdown(outcome, { channel = 'action', source = 'action',
   return `${out.join('\n')}\n`;
 }
 
-const escData = (s) => String(s).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+export const escData = (s) => String(s).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
 const escProp = (s) => escData(s).replace(/:/g, '%3A').replace(/,/g, '%2C');
 
-/** GitHub workflow commands. A Fix is an error; a Check is a warning, or an error when --fail-on warn makes it fail the step. */
+const FAILS = { fail: ['fail'], warn: ['fail', 'warn'], never: [] };
+
+/** GitHub workflow commands. An error is what fails the step under the chosen fail-on; everything else that needs attention is a warning. */
 export function annotations(outcome, failOn = 'fail') {
   if (!outcome.ok) return [`::warning title=${escProp('CitedBy: not measured')}::${escData(reasonText(outcome))}`];
   const lines = [];
   for (const c of outcome.result.checks) {
     if (c.status !== 'fail' && c.status !== 'warn') continue;
-    const level = c.status === 'fail' || (c.status === 'warn' && failOn === 'warn') ? 'error' : 'warning';
+    const level = (FAILS[failOn] || FAILS.fail).includes(c.status) ? 'error' : 'warning';
     lines.push(`::${level} title=${escProp(`CitedBy: ${titleOf(c)}`)}::${escData(messageOf(c))}`);
   }
   return lines;

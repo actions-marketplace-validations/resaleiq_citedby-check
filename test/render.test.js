@@ -159,3 +159,9 @@ test('different reasons stay apart: an unreadable page is not a missing product 
   assert.equal((t.match(/NOT CHECKED/g) || []).length, 2);
   assert.match(t, /NOT CHECKED Text in the page HTML, Organization data \(JSON-LD\) The page could not be read/);
 });
+
+test('annotations: with --fail-on never nothing is an error, because nothing fails the step', () => {
+  const a = annotations(mixed, 'never');
+  assert.equal(a.filter((l) => l.startsWith('::error')).length, 0);
+  assert.equal(a.filter((l) => l.startsWith('::warning')).length, 3);
+});
