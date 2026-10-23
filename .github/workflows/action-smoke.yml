@@ -1,0 +1,29 @@
+name: action-smoke
+# Manual: runs this commit's Action on a real runner against example.com, tagged source "ci" so the run is not counted as use.
+on:
+  workflow_dispatch:
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Report only (fail-on never)
+        id: report
+        uses: ./
+        with:
+          url: https://example.com
+          fail-on: never
+          source: ci
+      - name: Gate (example.com has things to fix, so this step must fail)
+        id: gate
+        continue-on-error: true
+        uses: ./
+        with:
+          url: https://example.com
+          source: ci
+      - name: Check what the Action reported
+        run: |
+          echo "report: result=${{ steps.report.outputs.result }} passed=${{ steps.report.outputs.passed }}/${{ steps.report.outputs.total }}"
+          echo "gate: outcome=${{ steps.gate.outcome }} result=${{ steps.gate.outputs.result }}"
+          test -n "${{ steps.report.outputs.result }}"
+          if [ "${{ steps.gate.outputs.result }}" = "fix" ]; then test "${{ steps.gate.outcome }}" = "failure"; fi
