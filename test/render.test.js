@@ -126,3 +126,36 @@ test('annotations: with --fail-on warn a Check is raised as an error because it 
   const a = annotations({ ok: true, result: { site: 'https://a.example', checks: [{ id: 'raw_text', status: 'warn', words: 60 }] } }, 'warn');
   assert.match(a[0], /^::error /);
 });
+
+const NO_SHOP = {
+  site: 'https://blog.example',
+  checks: [
+    { id: 'crawlers', status: 'pass', robots_found: true, checked: ['GPTBot', 'Bingbot'] },
+    { id: 'product_schema', status: 'na' },
+    { id: 'product_price', status: 'na' },
+    { id: 'product_availability', status: 'na' },
+    { id: 'product_gtin', status: 'na' },
+    { id: 'llms_txt', status: 'info' },
+  ],
+};
+
+test('checks that were not run for the same reason are one block, not four', () => {
+  const t = renderText({ ok: true, result: NO_SHOP }, plain);
+  assert.equal((t.match(/NOT CHECKED/g) || []).length, 1);
+  assert.equal((t.match(/No product page was found/g) || []).length, 1);
+  const flat = t.replace(/\s+/g, ' ');
+  assert.match(flat, /NOT CHECKED Product data \(JSON-LD\), Price in product data, Availability in product data, GTIN or barcode in product data No product page was found/);
+  assert.match(flat, /1 of 1 check passed\./);
+});
+
+test('the markdown summary groups them the same way', () => {
+  const md = renderMarkdown({ ok: true, result: NO_SHOP }, { channel: 'action' });
+  assert.equal((md.match(/\| Not checked \|/g) || []).length, 1);
+  assert.match(md, /\| Not checked \| Product data \(JSON-LD\), Price in product data, Availability in product data, GTIN or barcode in product data \| No product page was found/);
+});
+
+test('different reasons stay apart: an unreadable page is not a missing product page', () => {
+  const t = renderText({ ok: true, result: { site: 'https://a.example', checks: [{ id: 'crawlers', status: 'pass' }, { id: 'raw_text', status: 'unknown' }, { id: 'org_schema', status: 'unknown' }, { id: 'product_schema', status: 'na' }] } }, plain).replace(/\s+/g, ' ');
+  assert.equal((t.match(/NOT CHECKED/g) || []).length, 2);
+  assert.match(t, /NOT CHECKED Text in the page HTML, Organization data \(JSON-LD\) The page could not be read/);
+});

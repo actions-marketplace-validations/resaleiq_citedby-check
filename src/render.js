@@ -49,6 +49,18 @@ const COLORS = { pass: 32, fail: 31, warn: 33, info: 2, na: 2, unknown: 2 };
 
 const plural = (n, one, many) => (n === 1 ? one : many);
 
+/** Checks that were not run (na, unknown) for the same reason are one entry, so a site with no shop does not get four copies of one sentence. */
+function entries(checks) {
+  const out = [];
+  for (const c of checks) {
+    const message = messageOf(c);
+    const group = c.status === 'na' || c.status === 'unknown' ? out.find((e) => e.group && e.status === c.status && e.message === message) : null;
+    if (group) group.titles.push(titleOf(c));
+    else out.push({ status: c.status, titles: [titleOf(c)], message, group: c.status === 'na' || c.status === 'unknown' });
+  }
+  return out;
+}
+
 function summaryLine(s) {
   const bits = [];
   if (s.fail) bits.push(`${s.fail} to fix`);
@@ -69,10 +81,10 @@ export function renderText(outcome, { color = false, quiet = false, width = 80, 
   if (result.redirected_to) out.push(wrap(`Your address redirects to ${bareHost(result.redirected_to)}; that site was checked.`, width, 0));
   out.push('');
   const col = 14;
-  for (const c of result.checks) {
-    const word = wordOf(c.status).toUpperCase();
-    out.push(`  ${paint(color, COLORS[c.status] || 0, word)}${' '.repeat(Math.max(1, col - 2 - word.length))}${titleOf(c)}`);
-    out.push(`${' '.repeat(col)}${wrap(messageOf(c), width, col)}`);
+  for (const e of entries(result.checks)) {
+    const word = wordOf(e.status).toUpperCase();
+    out.push(`  ${paint(color, COLORS[e.status] || 0, word)}${' '.repeat(Math.max(1, col - 2 - word.length))}${wrap(e.titles.join(', '), width, col)}`);
+    out.push(`${' '.repeat(col)}${wrap(e.message, width, col)}`);
   }
   if (result.product_page) out.push('', wrap(`Product checks ran on ${bareHost(result.product_page)}.`, width, 0));
   out.push('', summaryLine(s), wrap(NOTE, width, 0));
@@ -89,7 +101,7 @@ export function renderMarkdown(outcome, { channel = 'action', source = 'action',
   const { result } = outcome;
   const site = bareHost(result.site) || target;
   const s = summarize(result);
-  const rows = result.checks.map((c) => `| ${cell(wordOf(c.status))} | ${cell(titleOf(c))} | ${cell(messageOf(c))} |`);
+  const rows = entries(result.checks).map((e) => `| ${cell(wordOf(e.status))} | ${cell(e.titles.join(', '))} | ${cell(e.message)} |`);
   const out = [`## AI-search readiness: ${site}`, '', `**${summaryLine(s)}**`, '', '| Status | Check | Detail |', '| --- | --- | --- |', ...rows, '', `_Checked from outside by citedby.eu: plain HTTP, no JavaScript. ${NOTE}_`];
   if (s.fail + s.warn > 0) out.push('', `The full audit crawls your site up to your plan's page limit and gives the exact fix for each problem: ${auditUrl(site, { channel, source })}`);
   return `${out.join('\n')}\n`;
