@@ -1,6 +1,6 @@
 {
   "name": "citedby-check",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Check whether AI-search crawlers can read your site, from the terminal or a GitHub Action. Free, no account, no API key.",
   "keywords": [
     "ai-search",
@@ -40,6 +40,6 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node --test test/"
+    "test": "node --test \"test/*.test.js\""
   }
 }

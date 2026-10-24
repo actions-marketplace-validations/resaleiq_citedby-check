@@ -26,6 +26,12 @@ citedby.eu loaded the site from outside: plain HTTP, no JavaScript.
               expect it to change what AI assistants answer.
 
 1 of 3 checks passed. 2 to fix.
+This is a technical check. It does not tell you whether an AI assistant will
+name your site.
+
+The full audit crawls your site up to your plan's page limit and gives the exact
+fix for each problem:
+https://citedby.eu/?url=example.com
 ```
 
 Output of a real run on example.com. The command exits with 1 because two checks need a fix.
@@ -49,13 +55,15 @@ citedby.eu loads `robots.txt`, your home page and `llms.txt` with a plain HTTP r
 
 | Check | What it looks at | Result |
 | --- | --- | --- |
-| AI crawlers in robots.txt | Whether OAI-SearchBot, GPTBot, PerplexityBot, Google-Extended or Bingbot is shut out of the home page | OK or Fix |
-| Text in the page HTML | Words a crawler reads without running JavaScript: 200 or more is OK, 50 to 199 is Check, fewer is Fix | OK, Check or Fix |
-| Organization data | Organization, LocalBusiness or a similar business type as JSON-LD on the home page | OK or Fix |
+| AI crawlers in robots.txt | Whether OAI-SearchBot, GPTBot, PerplexityBot, Google-Extended or Bingbot is shut out of the home page. No robots.txt (404) means no rules. A robots.txt that answers a server error (5xx) counts as shut out for all five, as RFC 9309 says | OK, Fix or Not checked |
+| Text in the page HTML | Words a crawler reads without running JavaScript: 200 or more is OK, 50 to 199 is Check, 1 to 49 is Fix. No readable text at all is Not checked | OK, Check, Fix or Not checked |
+| Organization data | Organization, LocalBusiness or a similar business type as JSON-LD on the home page | OK, Fix or Not checked |
 | Product data | Product JSON-LD, price, availability and GTIN on one product page, when the check finds one | OK, Check, Fix or Not checked |
-| llms.txt | Whether the file exists | OK or Optional |
+| llms.txt | Whether the site serves a real text file at `/llms.txt`: more than 50 characters, not an HTML page | OK or Optional |
 
 If your firewall turns the checker away, the result says your site refused the request. That is worth a look: it may refuse AI crawlers too.
+
+A robots.txt that does not answer in time is reported as Not checked, never as OK.
 
 ## Options
 
@@ -132,6 +140,12 @@ citedby.eu checks sites from outside, so `localhost`, private network addresses 
 ## What it does not tell you
 
 A pass means a crawler can read the pages the check loads. It does not say that an AI assistant will mention or cite your site, and it covers the home page and at most one product page.
+
+A home page that sends no text at all is reported as Not checked: the check treats an empty answer as a fetch it cannot judge. A run with no failed check still exits with 0. To fail on that case too, test for the status `unknown` in the JSON:
+
+```sh
+citedby-check yoursite.com --json --fail-on never | jq -e '[.checks[] | select(.status == "fail" or .status == "unknown")] | length == 0'
+```
 
 The full audit crawls your site up to your plan's page limit and gives the exact fix for each problem: https://citedby.eu/?utm_source=github&utm_medium=referral&utm_campaign=citedbycheck_202610&utm_content=readme_01
 

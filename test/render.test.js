@@ -165,3 +165,24 @@ test('annotations: with --fail-on never nothing is an error, because nothing fai
   assert.equal(a.filter((l) => l.startsWith('::error')).length, 0);
   assert.equal(a.filter((l) => l.startsWith('::warning')).length, 3);
 });
+
+test('a robots.txt that answered 5xx is a Fix with its own words, not "No robots.txt found" (RFC 9309 2.3.1.4)', () => {
+  const FIVE = ['OAI-SearchBot', 'GPTBot', 'PerplexityBot', 'Google-Extended', 'Bingbot'];
+  for (const status of [500, 503]) {
+    const t = renderText({ ok: true, result: { site: 'https://a.example', checks: [{ id: 'crawlers', status: 'fail', blocked: FIVE, checked: FIVE, robots_found: false, robots_status: status }] } }, plain).replace(/\s+/g, ' ');
+    assert.match(t, /FIX AI crawlers allowed in robots\.txt/);
+    assert.match(t, new RegExp(`robots\\.txt answered HTTP ${status}\\. Crawlers that follow RFC 9309 treat that as Disallow: / for the whole site\\.`));
+    assert.doesNotMatch(t, /No robots\.txt found/);
+  }
+});
+
+test('a robots.txt we could not load is Not checked, never OK', () => {
+  const t = renderText({ ok: true, result: { site: 'https://a.example', checks: [{ id: 'crawlers', status: 'unknown', blocked: [], checked: [], robots_found: false, robots_status: 0 }, { id: 'raw_text', status: 'pass', words: 300 }] } }, plain).replace(/\s+/g, ' ');
+  assert.match(t, /NOT CHECKED AI crawlers allowed in robots\.txt We could not load robots\.txt/);
+  assert.doesNotMatch(t, /No robots\.txt found|OK +AI crawlers/);
+});
+
+test('404 still reads "No robots.txt found": no file means no rules', () => {
+  const t = renderText({ ok: true, result: { site: 'https://a.example', checks: [{ id: 'crawlers', status: 'pass', robots_found: false, robots_status: 404 }] } }, plain);
+  assert.match(t, /No robots\.txt found, so nothing is blocked\./);
+});

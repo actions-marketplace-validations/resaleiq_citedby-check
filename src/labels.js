@@ -27,7 +27,8 @@ const orList = (list) => {
 const MESSAGES = {
   crawlers: {
     pass: (c) => (c.robots_found === false ? 'No robots.txt found, so nothing is blocked.' : `None of ${orList(c.checked)} is blocked in robots.txt.`),
-    fail: (c) => `robots.txt blocks: ${join(c.blocked)}. Fix: remove those Disallow rules, or the blanket Disallow for all robots. OAI-SearchBot is the crawler behind ChatGPT search. GPTBot is OpenAI's separate training crawler, so you can allow one and not the other.`,
+    fail: (c) => (c.robots_status >= 500 ? `robots.txt answered HTTP ${c.robots_status}. Crawlers that follow RFC 9309 treat that as Disallow: / for the whole site. Fix: make /robots.txt answer 200, or 404 if you want no rules.` : `robots.txt blocks: ${join(c.blocked)}. Fix: remove those Disallow rules, or the blanket Disallow for all robots. OAI-SearchBot is the crawler behind ChatGPT search. GPTBot is OpenAI's separate training crawler, so you can allow one and not the other.`),
+    unknown: 'We could not load robots.txt: the server did not answer in time. This is not a verdict on your site. Run the check again.',
   },
   raw_text: {
     pass: (c) => `${c.words} words of text are in the HTML a crawler receives.`,
